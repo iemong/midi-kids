@@ -1,5 +1,5 @@
-import { useRef, useCallback } from "react";
-import { noteToGrid, colToFrequency } from "@/lib/midi-utils";
+import { useRef, useCallback, useState } from "react";
+import { noteToGrid, gridToFrequency, WAVEFORMS } from "@/lib/midi-utils";
 
 interface OscillatorEntry {
   oscillator: OscillatorNode;
@@ -9,6 +9,11 @@ interface OscillatorEntry {
 export function useAudio() {
   const ctxRef = useRef<AudioContext | null>(null);
   const activeRef = useRef<Map<number, OscillatorEntry>>(new Map());
+  const [waveformIndex, setWaveformIndex] = useState(0);
+  const waveformRef = useRef<OscillatorType>(WAVEFORMS[0]);
+
+  const waveform = WAVEFORMS[waveformIndex];
+  waveformRef.current = waveform;
 
   const getContext = useCallback(() => {
     if (!ctxRef.current) {
@@ -26,10 +31,10 @@ export function useAudio() {
 
       const ctx = getContext();
       const grid = noteToGrid(note);
-      const freq = grid ? colToFrequency(grid.col) : 440;
+      const freq = grid ? gridToFrequency(grid.row, grid.col) : 440;
 
       const oscillator = ctx.createOscillator();
-      oscillator.type = "triangle";
+      oscillator.type = waveformRef.current;
       oscillator.frequency.setValueAtTime(freq, ctx.currentTime);
 
       const gain = ctx.createGain();
@@ -65,5 +70,13 @@ export function useAudio() {
     getContext();
   }, [getContext]);
 
-  return { playNote, stopNote, resumeContext };
+  const nextWaveform = useCallback(() => {
+    setWaveformIndex((i) => (i + 1) % WAVEFORMS.length);
+  }, []);
+
+  const prevWaveform = useCallback(() => {
+    setWaveformIndex((i) => (i - 1 + WAVEFORMS.length) % WAVEFORMS.length);
+  }, []);
+
+  return { playNote, stopNote, resumeContext, waveform, nextWaveform, prevWaveform };
 }

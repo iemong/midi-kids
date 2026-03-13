@@ -11,15 +11,26 @@ export function gridToNote(row: number, col: number): number {
   return (row + 1) * 10 + (col + 1);
 }
 
-/** Pentatonic scale semitone steps from C4 */
+/** Pentatonic scale semitone steps from base */
 const PENTATONIC_SEMITONES = [0, 2, 4, 7, 9, 12, 14, 16];
-const C4_FREQ = 261.63;
+const C3_FREQ = 130.81;
 
-/** Column index → frequency (pentatonic scale) */
-export function colToFrequency(col: number): number {
+/** Grid position → frequency (row shifts pitch, col selects pentatonic note) */
+export function gridToFrequency(row: number, col: number): number {
   const semitone = PENTATONIC_SEMITONES[col % PENTATONIC_SEMITONES.length];
-  return C4_FREQ * Math.pow(2, semitone / 12);
+  const rowOffset = row * 3; // each row shifts ~minor 3rd (3 semitones)
+  return C3_FREQ * Math.pow(2, (semitone + rowOffset) / 12);
 }
+
+/** Available oscillator waveforms */
+export const WAVEFORMS: OscillatorType[] = ["triangle", "sine", "square", "sawtooth"];
+
+export const WAVEFORM_LABELS: Record<string, string> = {
+  triangle: "トライアングル",
+  sine: "サイン",
+  square: "スクエア",
+  sawtooth: "ノコギリ",
+};
 
 /** Bright LED color velocity values for Launchpad */
 export const BRIGHT_COLORS = [5, 9, 13, 21, 29, 37, 45, 53, 57, 61] as const;

@@ -1,10 +1,10 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { LaunchpadGrid } from "@/components/LaunchpadGrid";
 import { useMidi } from "@/hooks/useMidi";
 import { useAudio } from "@/hooks/useAudio";
-import { randomCssColor } from "@/lib/midi-utils";
+import { randomCssColor, WAVEFORM_LABELS } from "@/lib/midi-utils";
 
 interface PadState {
   color: string;
@@ -12,7 +12,8 @@ interface PadState {
 
 function App() {
   const [activePads, setActivePads] = useState<Map<number, PadState>>(new Map());
-  const { playNote, stopNote, resumeContext } = useAudio();
+  const { playNote, stopNote, resumeContext, waveform, nextWaveform, prevWaveform } =
+    useAudio();
 
   const handleNoteOn = useCallback(
     (note: number) => {
@@ -62,6 +63,21 @@ function App() {
     [resumeContext, handleNoteOn]
   );
 
+  // Keyboard: ArrowUp / ArrowDown to switch waveform
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        prevWaveform();
+      } else if (e.key === "ArrowDown") {
+        e.preventDefault();
+        nextWaveform();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [nextWaveform, prevWaveform]);
+
   const statusLabel: Record<string, string> = {
     disconnected: "未接続",
     connecting: "接続中...",
@@ -69,11 +85,12 @@ function App() {
     unsupported: "非対応",
   };
 
-  const statusVariant = status === "connected"
-    ? ("default" as const)
-    : status === "unsupported"
-    ? ("destructive" as const)
-    : ("secondary" as const);
+  const statusVariant =
+    status === "connected"
+      ? ("default" as const)
+      : status === "unsupported"
+        ? ("destructive" as const)
+        : ("secondary" as const);
 
   return (
     <div
@@ -102,6 +119,18 @@ function App() {
           onPadOn={handlePadOn}
           onPadOff={handleNoteOff}
         />
+
+        <div className="flex items-center justify-center gap-3">
+          <Button size="sm" variant="outline" onClick={prevWaveform}>
+            ▲
+          </Button>
+          <Badge variant="secondary" className="text-sm px-3 py-1">
+            {WAVEFORM_LABELS[waveform] ?? waveform}
+          </Badge>
+          <Button size="sm" variant="outline" onClick={nextWaveform}>
+            ▼
+          </Button>
+        </div>
 
         {status === "unsupported" && (
           <p className="text-sm text-muted-foreground text-center">
