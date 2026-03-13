@@ -1,0 +1,41 @@
+/** Launchpad note number → grid position */
+export function noteToGrid(note: number): { row: number; col: number } | null {
+  const row = Math.floor(note / 10) - 1;
+  const col = (note % 10) - 1;
+  if (row < 0 || row > 7 || col < 0 || col > 7) return null;
+  return { row, col };
+}
+
+/** Grid position → Launchpad note number */
+export function gridToNote(row: number, col: number): number {
+  return (row + 1) * 10 + (col + 1);
+}
+
+/** Pentatonic scale semitone steps from C4 */
+const PENTATONIC_SEMITONES = [0, 2, 4, 7, 9, 12, 14, 16];
+const C4_FREQ = 261.63;
+
+/** Column index → frequency (pentatonic scale) */
+export function colToFrequency(col: number): number {
+  const semitone = PENTATONIC_SEMITONES[col % PENTATONIC_SEMITONES.length];
+  return C4_FREQ * Math.pow(2, semitone / 12);
+}
+
+/** Bright LED color velocity values for Launchpad */
+export const BRIGHT_COLORS = [5, 9, 13, 21, 29, 37, 45, 53, 57, 61] as const;
+
+/** Get a random bright color velocity */
+export function randomColor(): number {
+  return BRIGHT_COLORS[Math.floor(Math.random() * BRIGHT_COLORS.length)];
+}
+
+/** CSS colors matching the Launchpad LED colors for on-screen display */
+const PAD_CSS_COLORS = [
+  "#ff3333", "#ff8833", "#ffff33", "#33ff33",
+  "#33ffff", "#3388ff", "#8833ff", "#ff33ff",
+  "#ff6666", "#66ff99",
+];
+
+export function randomCssColor(): string {
+  return PAD_CSS_COLORS[Math.floor(Math.random() * PAD_CSS_COLORS.length)];
+}

@@ -1,121 +1,118 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useState, useCallback } from "react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { LaunchpadGrid } from "@/components/LaunchpadGrid";
+import { useMidi } from "@/hooks/useMidi";
+import { useAudio } from "@/hooks/useAudio";
+import { randomCssColor } from "@/lib/midi-utils";
 
-function App() {
-  const [count, setCount] = useState(0)
-
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+interface PadState {
+  color: string;
 }
 
-export default App
+function App() {
+  const [activePads, setActivePads] = useState<Map<number, PadState>>(new Map());
+  const { playNote, stopNote, resumeContext } = useAudio();
+
+  const handleNoteOn = useCallback(
+    (note: number) => {
+      playNote(note);
+      sendLedOnRef.current(note);
+      setActivePads((prev) => {
+        const next = new Map(prev);
+        next.set(note, { color: randomCssColor() });
+        return next;
+      });
+    },
+    [playNote]
+  );
+
+  const handleNoteOff = useCallback(
+    (note: number) => {
+      stopNote(note);
+      sendLedOffRef.current(note);
+      setActivePads((prev) => {
+        const next = new Map(prev);
+        next.delete(note);
+        return next;
+      });
+    },
+    [stopNote]
+  );
+
+  const { status, connect, sendLedOn, sendLedOff } = useMidi({
+    onNoteOn: handleNoteOn,
+    onNoteOff: handleNoteOff,
+  });
+
+  // Store refs to avoid circular dependency
+  const sendLedOnRef = { current: sendLedOn };
+  const sendLedOffRef = { current: sendLedOff };
+
+  const handleConnect = useCallback(() => {
+    resumeContext();
+    connect();
+  }, [resumeContext, connect]);
+
+  const handlePadOn = useCallback(
+    (note: number) => {
+      resumeContext();
+      handleNoteOn(note);
+    },
+    [resumeContext, handleNoteOn]
+  );
+
+  const statusLabel: Record<string, string> = {
+    disconnected: "未接続",
+    connecting: "接続中...",
+    connected: "接続済み",
+    unsupported: "非対応",
+  };
+
+  const statusVariant = status === "connected"
+    ? ("default" as const)
+    : status === "unsupported"
+    ? ("destructive" as const)
+    : ("secondary" as const);
+
+  return (
+    <div
+      className="min-h-svh flex flex-col items-center justify-center p-4 gap-6"
+      onPointerDown={resumeContext}
+    >
+      <div className="w-full max-w-lg space-y-4">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold tracking-tight">MIDI Kids</h1>
+          <div className="flex items-center gap-2">
+            <Badge variant={statusVariant}>{statusLabel[status]}</Badge>
+            {status !== "unsupported" && status !== "connected" && (
+              <Button
+                size="sm"
+                onClick={handleConnect}
+                disabled={status === "connecting"}
+              >
+                MIDI接続
+              </Button>
+            )}
+          </div>
+        </div>
+
+        <LaunchpadGrid
+          activePads={activePads}
+          onPadOn={handlePadOn}
+          onPadOff={handleNoteOff}
+        />
+
+        {status === "unsupported" && (
+          <p className="text-sm text-muted-foreground text-center">
+            このブラウザはWebMIDI APIに対応していません。Chrome/Edgeをお使いください。
+            <br />
+            画面のパッドをタップして音を鳴らすことはできます。
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default App;
