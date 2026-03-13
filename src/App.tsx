@@ -41,9 +41,21 @@ function App() {
     [stopNote]
   );
 
+  const handleControlChange = useCallback(
+    (cc: number, value: number) => {
+      // Only react on button press (value > 0), not release
+      if (value === 0) return;
+      console.log(`[App] CC ${cc} mapped — will switch waveform once mapping is confirmed`);
+      // TODO: map specific CC numbers after checking console output
+      nextWaveform();
+    },
+    [nextWaveform]
+  );
+
   const { status, connect, sendLedOn, sendLedOff } = useMidi({
     onNoteOn: handleNoteOn,
     onNoteOff: handleNoteOff,
+    onControlChange: handleControlChange,
   });
 
   // Store refs to avoid circular dependency

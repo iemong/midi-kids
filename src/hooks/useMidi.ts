@@ -2,32 +2,45 @@ import { useState, useRef, useCallback } from "react";
 import { randomColor } from "@/lib/midi-utils";
 
 type NoteCallback = (note: number, velocity: number) => void;
+type ControlChangeCallback = (cc: number, value: number) => void;
 
 interface UseMidiOptions {
   onNoteOn?: NoteCallback;
   onNoteOff?: NoteCallback;
+  onControlChange?: ControlChangeCallback;
 }
 
 export type ConnectionStatus = "disconnected" | "connecting" | "connected" | "unsupported";
 
-export function useMidi({ onNoteOn, onNoteOff }: UseMidiOptions = {}) {
+export function useMidi({ onNoteOn, onNoteOff, onControlChange }: UseMidiOptions = {}) {
   const [status, setStatus] = useState<ConnectionStatus>(
     typeof navigator !== "undefined" && "requestMIDIAccess" in navigator
       ? "disconnected"
       : "unsupported"
   );
   const outputRef = useRef<MIDIOutput | null>(null);
-  const callbacksRef = useRef({ onNoteOn, onNoteOff });
-  callbacksRef.current = { onNoteOn, onNoteOff };
+  const callbacksRef = useRef({ onNoteOn, onNoteOff, onControlChange });
+  callbacksRef.current = { onNoteOn, onNoteOff, onControlChange };
 
   const handleMidiMessage = useCallback((e: MIDIMessageEvent) => {
-    const [status, note, velocity] = e.data!;
-    const command = status & 0xf0;
+    const data = e.data!;
+    const [statusByte, d1, d2] = data;
+    const command = statusByte & 0xf0;
+    const channel = statusByte & 0x0f;
 
-    if (command === 0x90 && velocity > 0) {
-      callbacksRef.current.onNoteOn?.(note, velocity);
-    } else if (command === 0x80 || (command === 0x90 && velocity === 0)) {
-      callbacksRef.current.onNoteOff?.(note, velocity);
+    // Log all MIDI messages
+    console.log(
+      `[MIDI] status=0x${statusByte.toString(16)} cmd=0x${command.toString(16)} ch=${channel} data1=${d1} data2=${d2}`,
+      `| raw=[${Array.from(data).map((b) => "0x" + b.toString(16).padStart(2, "0")).join(", ")}]`
+    );
+
+    if (command === 0x90 && d2 > 0) {
+      callbacksRef.current.onNoteOn?.(d1, d2);
+    } else if (command === 0x80 || (command === 0x90 && d2 === 0)) {
+      callbacksRef.current.onNoteOff?.(d1, d2);
+    } else if (command === 0xb0) {
+      // Control Change
+      callbacksRef.current.onControlChange?.(d1, d2);
     }
   }, []);
 
