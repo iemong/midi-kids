@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C /Users/iemong/IdeaProjects/midi-kids log --oneline -5 2>/dev/null || echo \"No commits yet\")",
+      "Bash(node --version && npm --version 2>/dev/null)",
+      "Bash(npm info:*)",
+      "Bash(bun create:*)",
+      "Read(//private/tmp/**)",
+      "Bash(rm -rf midi-kids-temp)",
+      "Bash(cp -r /tmp/midi-kids-temp/* /tmp/midi-kids-temp/.gitignore /Users/iemong/IdeaProjects/midi-kids/ 2>&1 && ls -la /Users/iemong/IdeaProjects/midi-kids/)",
+      "Bash(bun install:*)",
+      "Bash(bun add:*)",
+      "Bash(bunx shadcn@latest init -d -y --style default --base-color neutral 2>&1)",
+      "Bash(bunx shadcn@latest init -y -d 2>&1)"
+    ]
+  }
+}
