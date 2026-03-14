@@ -25,7 +25,6 @@ type View = "launchpad" | "sequencer";
 
 function App() {
   const [view, setView] = useState<View>("launchpad");
-  const [seqPage, setSeqPage] = useState(0); // 0 = steps 0-7, 1 = steps 8-15
   const [activePads, setActivePads] = useState<Map<number, PadState>>(
     new Map()
   );
@@ -53,9 +52,7 @@ function App() {
   const sequencer = useSequencer(handleStep);
 
   const viewRef = useRef(view);
-  const seqPageRef = useRef(seqPage);
   viewRef.current = view;
-  seqPageRef.current = seqPage;
 
   // --- Launchpad mode handlers ---
 
@@ -91,8 +88,7 @@ function App() {
     (note: number) => {
       const pos = noteToGrid(note);
       if (!pos) return;
-      const step = pos.col + seqPageRef.current * 8;
-      sequencer.toggleCell(pos.row, step);
+      sequencer.toggleCell(pos.row, pos.col);
     },
     [sequencer.toggleCell]
   );
@@ -124,12 +120,8 @@ function App() {
     (cc: number, value: number) => {
       if (value === 0) return;
       if (viewRef.current === "sequencer") {
-        // CC 104/105: page switch for sequencer
-        if (cc === 104) setSeqPage(0);
-        else if (cc === 105) setSeqPage(1);
-        // CC 106/107: waveform
-        else if (cc === 106) prevWaveform();
-        else if (cc === 107) nextWaveform();
+        if (cc === 104) prevWaveform();
+        else if (cc === 105) nextWaveform();
       } else {
         if (cc === 104) prevWaveform();
         else if (cc === 105) nextWaveform();
@@ -156,10 +148,9 @@ function App() {
 
     for (let row = 0; row < 8; row++) {
       for (let col = 0; col < 8; col++) {
-        const step = col + seqPage * 8;
         const note = gridToNote(row, col);
-        const isActive = sequencer.grid[row]?.[step];
-        const isPlayhead = step === sequencer.currentStep;
+        const isActive = sequencer.grid[row]?.[col];
+        const isPlayhead = col === sequencer.currentStep;
 
         if (isActive && isPlayhead) {
           // Active + playhead: bright white
@@ -175,7 +166,7 @@ function App() {
         }
       }
     }
-  }, [status, seqPage, sequencer.grid, sequencer.currentStep, sendLedOnWithColor, sendLedOff]);
+  }, [status, sequencer.grid, sequencer.currentStep, sendLedOnWithColor, sendLedOff]);
 
   // Update LEDs when in sequencer view
   useEffect(() => {
@@ -244,7 +235,7 @@ function App() {
       onPointerDown={resumeContext}
     >
       <div
-        className={`w-full ${view === "sequencer" ? "max-w-3xl" : "max-w-lg"} space-y-4`}
+        className="w-full max-w-lg space-y-4"
       >
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold tracking-tight">MIDI Kids</h1>
@@ -320,27 +311,6 @@ function App() {
               currentStep={sequencer.currentStep}
               onToggleCell={sequencer.toggleCell}
             />
-            {status === "connected" && (
-              <div className="flex items-center justify-center gap-2">
-                <Badge variant="secondary" className="text-xs">
-                  Launchpad ページ
-                </Badge>
-                <Button
-                  size="xs"
-                  variant={seqPage === 0 ? "default" : "outline"}
-                  onClick={() => setSeqPage(0)}
-                >
-                  1-8
-                </Button>
-                <Button
-                  size="xs"
-                  variant={seqPage === 1 ? "default" : "outline"}
-                  onClick={() => setSeqPage(1)}
-                >
-                  9-16
-                </Button>
-              </div>
-            )}
           </>
         )}
 

@@ -58,7 +58,7 @@ export function SequencerGrid({
         <span className="text-[10px] text-muted-foreground w-6 text-right shrink-0 font-mono">
           {label}
         </span>
-        <div className="grid grid-cols-16 gap-0.5 sm:gap-1 flex-1">
+        <div className="grid grid-cols-8 gap-0.5 sm:gap-1 flex-1">
           {cells}
         </div>
       </div>

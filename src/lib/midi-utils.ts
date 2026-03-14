@@ -52,7 +52,7 @@ export function randomCssColor(): string {
 }
 
 /** Step sequencer constants */
-export const SEQUENCER_NUM_STEPS = 16;
+export const SEQUENCER_NUM_STEPS = 8;
 export const SEQUENCER_DEFAULT_BPM = 120;
 
 /** Note labels for each sequencer row (pentatonic scale from C3) */
