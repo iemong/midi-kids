@@ -16,7 +16,7 @@ export function useMidi({ onNoteOn, onNoteOff, onControlChange }: UseMidiOptions
   const [status, setStatus] = useState<ConnectionStatus>(
     typeof navigator !== "undefined" && "requestMIDIAccess" in navigator
       ? "disconnected"
-      : "unsupported"
+      : "unsupported",
   );
   const outputRef = useRef<MIDIOutput | null>(null);
   const callbacksRef = useRef({ onNoteOn, onNoteOff, onControlChange });
@@ -31,7 +31,9 @@ export function useMidi({ onNoteOn, onNoteOff, onControlChange }: UseMidiOptions
     // Log all MIDI messages
     console.log(
       `[MIDI] status=0x${statusByte.toString(16)} cmd=0x${command.toString(16)} ch=${channel} data1=${d1} data2=${d2}`,
-      `| raw=[${Array.from(data).map((b) => "0x" + b.toString(16).padStart(2, "0")).join(", ")}]`
+      `| raw=[${Array.from(data)
+        .map((b) => "0x" + b.toString(16).padStart(2, "0"))
+        .join(", ")}]`,
     );
 
     if (command === 0x90 && d2 > 0) {
@@ -101,5 +103,23 @@ export function useMidi({ onNoteOn, onNoteOff, onControlChange }: UseMidiOptions
     output.send([0x80, note, 0]);
   }, []);
 
-  return { status, connect, sendLedOn, sendLedOff };
+  const sendLedOnWithColor = useCallback((note: number, velocity: number) => {
+    const output = outputRef.current;
+    if (!output) return;
+    output.send([0x90, note, velocity]);
+  }, []);
+
+  const clearAllLeds = useCallback(() => {
+    const output = outputRef.current;
+    if (!output) return;
+    // Send Note Off for all 64 pads (8x8 grid)
+    for (let row = 0; row < 8; row++) {
+      for (let col = 0; col < 8; col++) {
+        const note = (row + 1) * 10 + (col + 1);
+        output.send([0x80, note, 0]);
+      }
+    }
+  }, []);
+
+  return { status, connect, sendLedOn, sendLedOff, sendLedOnWithColor, clearAllLeds };
 }

@@ -6,9 +6,7 @@ function createEmptyGrid(rows: number, steps: number): boolean[][] {
 }
 
 export function useSequencer(onStep: (activeRows: number[]) => void) {
-  const [grid, setGrid] = useState(() =>
-    createEmptyGrid(8, SEQUENCER_NUM_STEPS)
-  );
+  const [grid, setGrid] = useState(() => createEmptyGrid(8, SEQUENCER_NUM_STEPS));
   const [currentStep, setCurrentStep] = useState(-1);
   const [isPlaying, setIsPlaying] = useState(false);
   const [bpm, setBpm] = useState(SEQUENCER_DEFAULT_BPM);
@@ -49,7 +47,7 @@ export function useSequencer(onStep: (activeRows: number[]) => void) {
         }
       }, periodMs);
     },
-    [clearInterval_]
+    [clearInterval_],
   );
 
   const play = useCallback(() => {

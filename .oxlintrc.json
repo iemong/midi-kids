@@ -1,0 +1,4 @@
+{
+  "$schema": "https://raw.githubusercontent.com/nicolo-ribaudo/oxc-project.github.io/refs/heads/oxlint-schema/src/docs/guide/usage/linter/generated/schema.json",
+  "rules": {}
+}

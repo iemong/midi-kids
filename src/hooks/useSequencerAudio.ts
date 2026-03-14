@@ -15,9 +15,9 @@ export function useSequencerAudio() {
   }, []);
 
   const playStepNote = useCallback(
-    (rowIndex: number, waveform: OscillatorType) => {
+    (rowIndex: number, waveform: OscillatorType, pitchOffset: number = 0) => {
       const ctx = getContext();
-      const freq = gridToFrequency(0, rowIndex);
+      const freq = gridToFrequency(pitchOffset, rowIndex);
 
       const oscillator = ctx.createOscillator();
       oscillator.type = waveform;
@@ -33,7 +33,7 @@ export function useSequencerAudio() {
       oscillator.start(ctx.currentTime);
       oscillator.stop(ctx.currentTime + 0.2);
     },
-    [getContext]
+    [getContext],
   );
 
   const resumeContext = useCallback(() => {

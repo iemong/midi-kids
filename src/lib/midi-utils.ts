@@ -42,9 +42,16 @@ export function randomColor(): number {
 
 /** CSS colors matching the Launchpad LED colors for on-screen display */
 const PAD_CSS_COLORS = [
-  "#ff3333", "#ff8833", "#ffff33", "#33ff33",
-  "#33ffff", "#3388ff", "#8833ff", "#ff33ff",
-  "#ff6666", "#66ff99",
+  "#ff3333",
+  "#ff8833",
+  "#ffff33",
+  "#33ff33",
+  "#33ffff",
+  "#3388ff",
+  "#8833ff",
+  "#ff33ff",
+  "#ff6666",
+  "#66ff99",
 ];
 
 export function randomCssColor(): string {
@@ -52,16 +59,36 @@ export function randomCssColor(): string {
 }
 
 /** Step sequencer constants */
-export const SEQUENCER_NUM_STEPS = 16;
+export const SEQUENCER_NUM_STEPS = 8;
 export const SEQUENCER_DEFAULT_BPM = 120;
 
-/** Note labels for each sequencer row (pentatonic scale from C3) */
-export const SEQUENCER_ROW_LABELS = [
-  "C3", "D3", "E3", "G3", "A3", "C4", "D4", "E4",
-];
+const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+const BASE_OCTAVE = 3; // C3
+
+/** Get note labels for sequencer rows at a given pitch offset */
+export function getSequencerRowLabels(pitchOffset: number): string[] {
+  return PENTATONIC_SEMITONES.map((semi) => {
+    const totalSemitones = semi + pitchOffset * 3;
+    const noteIndex = ((totalSemitones % 12) + 12) % 12;
+    const octave = BASE_OCTAVE + Math.floor(totalSemitones / 12);
+    return `${NOTE_NAMES[noteIndex]}${octave}`;
+  });
+}
 
 /** Colors for each sequencer row */
 export const SEQUENCER_ROW_COLORS = [
-  "#ff3333", "#ff8833", "#ffff33", "#33ff33",
-  "#33ffff", "#3388ff", "#8833ff", "#ff33ff",
+  "#ff3333",
+  "#ff8833",
+  "#ffff33",
+  "#33ff33",
+  "#33ffff",
+  "#3388ff",
+  "#8833ff",
+  "#ff33ff",
 ];
+
+/** Launchpad LED velocities for sequencer rows (one per row, bright colors) */
+export const SEQUENCER_ROW_LED_COLORS = [5, 9, 13, 21, 29, 37, 45, 53] as const;
+
+/** Playhead LED velocity (white/bright) */
+export const SEQUENCER_PLAYHEAD_LED_COLOR = 3;
