@@ -50,3 +50,18 @@ const PAD_CSS_COLORS = [
 export function randomCssColor(): string {
   return PAD_CSS_COLORS[Math.floor(Math.random() * PAD_CSS_COLORS.length)];
 }
+
+/** Step sequencer constants */
+export const SEQUENCER_NUM_STEPS = 16;
+export const SEQUENCER_DEFAULT_BPM = 120;
+
+/** Note labels for each sequencer row (pentatonic scale from C3) */
+export const SEQUENCER_ROW_LABELS = [
+  "C3", "D3", "E3", "G3", "A3", "C4", "D4", "E4",
+];
+
+/** Colors for each sequencer row */
+export const SEQUENCER_ROW_COLORS = [
+  "#ff3333", "#ff8833", "#ffff33", "#33ff33",
+  "#33ffff", "#3388ff", "#8833ff", "#ff33ff",
+];

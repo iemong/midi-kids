@@ -2,18 +2,48 @@ import { useState, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { LaunchpadGrid } from "@/components/LaunchpadGrid";
+import { SequencerGrid } from "@/components/SequencerGrid";
+import { SequencerControls } from "@/components/SequencerControls";
 import { useMidi } from "@/hooks/useMidi";
 import { useAudio } from "@/hooks/useAudio";
+import { useSequencer } from "@/hooks/useSequencer";
+import { useSequencerAudio } from "@/hooks/useSequencerAudio";
 import { randomCssColor, WAVEFORM_LABELS } from "@/lib/midi-utils";
 
 interface PadState {
   color: string;
 }
 
+type View = "launchpad" | "sequencer";
+
 function App() {
-  const [activePads, setActivePads] = useState<Map<number, PadState>>(new Map());
-  const { playNote, stopNote, resumeContext, waveform, nextWaveform, prevWaveform } =
-    useAudio();
+  const [view, setView] = useState<View>("launchpad");
+  const [activePads, setActivePads] = useState<Map<number, PadState>>(
+    new Map()
+  );
+  const {
+    playNote,
+    stopNote,
+    resumeContext,
+    waveform,
+    nextWaveform,
+    prevWaveform,
+  } = useAudio();
+
+  // Sequencer audio & state
+  const { playStepNote, resumeContext: resumeSeqContext } =
+    useSequencerAudio();
+
+  const handleStep = useCallback(
+    (activeRows: number[]) => {
+      for (const row of activeRows) {
+        playStepNote(row, waveform);
+      }
+    },
+    [playStepNote, waveform]
+  );
+
+  const sequencer = useSequencer(handleStep);
 
   const handleNoteOn = useCallback(
     (note: number) => {
@@ -73,6 +103,11 @@ function App() {
     [resumeContext, handleNoteOn]
   );
 
+  const handleSeqPlay = useCallback(() => {
+    resumeSeqContext();
+    sequencer.play();
+  }, [resumeSeqContext, sequencer.play]);
+
   // Keyboard: ArrowUp / ArrowDown to switch waveform
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -107,7 +142,9 @@ function App() {
       className="min-h-svh flex flex-col items-center justify-center p-4 gap-6"
       onPointerDown={resumeContext}
     >
-      <div className="w-full max-w-lg space-y-4">
+      <div
+        className={`w-full ${view === "sequencer" ? "max-w-3xl" : "max-w-lg"} space-y-4`}
+      >
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold tracking-tight">MIDI Kids</h1>
           <div className="flex items-center gap-2">
@@ -124,23 +161,66 @@ function App() {
           </div>
         </div>
 
-        <LaunchpadGrid
-          activePads={activePads}
-          onPadOn={handlePadOn}
-          onPadOff={handleNoteOff}
-        />
-
-        <div className="flex items-center justify-center gap-3">
-          <Button size="sm" variant="outline" onClick={prevWaveform}>
-            ▲
+        {/* View tabs */}
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant={view === "launchpad" ? "default" : "outline"}
+            onClick={() => setView("launchpad")}
+          >
+            ランチパッド
           </Button>
-          <Badge variant="secondary" className="text-sm px-3 py-1">
-            {WAVEFORM_LABELS[waveform] ?? waveform}
-          </Badge>
-          <Button size="sm" variant="outline" onClick={nextWaveform}>
-            ▼
+          <Button
+            size="sm"
+            variant={view === "sequencer" ? "default" : "outline"}
+            onClick={() => setView("sequencer")}
+          >
+            シーケンサー
           </Button>
         </div>
+
+        {view === "launchpad" && (
+          <>
+            <LaunchpadGrid
+              activePads={activePads}
+              onPadOn={handlePadOn}
+              onPadOff={handleNoteOff}
+            />
+
+            <div className="flex items-center justify-center gap-3">
+              <Button size="sm" variant="outline" onClick={prevWaveform}>
+                ▲
+              </Button>
+              <Badge variant="secondary" className="text-sm px-3 py-1">
+                {WAVEFORM_LABELS[waveform] ?? waveform}
+              </Badge>
+              <Button size="sm" variant="outline" onClick={nextWaveform}>
+                ▼
+              </Button>
+            </div>
+          </>
+        )}
+
+        {view === "sequencer" && (
+          <>
+            <SequencerControls
+              isPlaying={sequencer.isPlaying}
+              bpm={sequencer.bpm}
+              waveform={waveform}
+              onPlay={handleSeqPlay}
+              onStop={sequencer.stop}
+              onClear={sequencer.clear}
+              onBpmChange={sequencer.setBpm}
+              onNextWaveform={nextWaveform}
+              onPrevWaveform={prevWaveform}
+            />
+            <SequencerGrid
+              grid={sequencer.grid}
+              currentStep={sequencer.currentStep}
+              onToggleCell={sequencer.toggleCell}
+            />
+          </>
+        )}
 
         {status === "unsupported" && (
           <p className="text-sm text-muted-foreground text-center">
