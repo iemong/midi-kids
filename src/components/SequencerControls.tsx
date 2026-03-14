@@ -6,24 +6,30 @@ interface SequencerControlsProps {
   isPlaying: boolean;
   bpm: number;
   waveform: OscillatorType;
+  pitchOffset: number;
   onPlay: () => void;
   onStop: () => void;
   onClear: () => void;
   onBpmChange: (bpm: number) => void;
   onNextWaveform: () => void;
   onPrevWaveform: () => void;
+  onPitchUp: () => void;
+  onPitchDown: () => void;
 }
 
 export function SequencerControls({
   isPlaying,
   bpm,
   waveform,
+  pitchOffset,
   onPlay,
   onStop,
   onClear,
   onBpmChange,
   onNextWaveform,
   onPrevWaveform,
+  onPitchUp,
+  onPitchDown,
 }: SequencerControlsProps) {
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -68,6 +74,18 @@ export function SequencerControls({
         </Badge>
         <Button size="xs" variant="outline" onClick={onNextWaveform}>
           ▼
+        </Button>
+      </div>
+
+      <div className="flex items-center gap-1.5">
+        <Button size="xs" variant="outline" onClick={onPitchDown}>
+          -
+        </Button>
+        <Badge variant="secondary" className="text-xs px-2 py-0.5 tabular-nums">
+          音程 {pitchOffset >= 0 ? `+${pitchOffset}` : pitchOffset}
+        </Badge>
+        <Button size="xs" variant="outline" onClick={onPitchUp}>
+          +
         </Button>
       </div>
     </div>

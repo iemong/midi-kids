@@ -1,27 +1,30 @@
 import { Card } from "@/components/ui/card";
 import {
-  SEQUENCER_ROW_LABELS,
   SEQUENCER_ROW_COLORS,
+  getSequencerRowLabels,
 } from "@/lib/midi-utils";
 import { cn } from "@/lib/utils";
 
 interface SequencerGridProps {
   grid: boolean[][];
   currentStep: number;
+  pitchOffset: number;
   onToggleCell: (row: number, step: number) => void;
 }
 
 export function SequencerGrid({
   grid,
   currentStep,
+  pitchOffset,
   onToggleCell,
 }: SequencerGridProps) {
+  const labels = getSequencerRowLabels(pitchOffset);
   const rows: React.ReactNode[] = [];
 
   // Render rows top-down: highest pitch at top
   for (let row = grid.length - 1; row >= 0; row--) {
     const color = SEQUENCER_ROW_COLORS[row];
-    const label = SEQUENCER_ROW_LABELS[row];
+    const label = labels[row];
 
     const cells: React.ReactNode[] = [];
     for (let step = 0; step < grid[row].length; step++) {

@@ -23,8 +23,12 @@ interface PadState {
 
 type View = "launchpad" | "sequencer";
 
+const MIN_PITCH_OFFSET = -4;
+const MAX_PITCH_OFFSET = 8;
+
 function App() {
   const [view, setView] = useState<View>("launchpad");
+  const [pitchOffset, setPitchOffset] = useState(0);
   const [activePads, setActivePads] = useState<Map<number, PadState>>(
     new Map()
   );
@@ -43,7 +47,7 @@ function App() {
   const handleStep = useCallback(
     (activeRows: number[]) => {
       for (const row of activeRows) {
-        playStepNote(row, waveform);
+        playStepNote(row, waveform, pitchOffsetRef.current);
       }
     },
     [playStepNote, waveform]
@@ -53,6 +57,8 @@ function App() {
 
   const viewRef = useRef(view);
   viewRef.current = view;
+  const pitchOffsetRef = useRef(pitchOffset);
+  pitchOffsetRef.current = pitchOffset;
 
   // --- Launchpad mode handlers ---
 
@@ -120,8 +126,10 @@ function App() {
     (cc: number, value: number) => {
       if (value === 0) return;
       if (viewRef.current === "sequencer") {
-        if (cc === 104) prevWaveform();
-        else if (cc === 105) nextWaveform();
+        if (cc === 104) setPitchOffset((p) => Math.max(MIN_PITCH_OFFSET, p - 1));
+        else if (cc === 105) setPitchOffset((p) => Math.min(MAX_PITCH_OFFSET, p + 1));
+        else if (cc === 106) prevWaveform();
+        else if (cc === 107) nextWaveform();
       } else {
         if (cc === 104) prevWaveform();
         else if (cc === 105) nextWaveform();
@@ -299,16 +307,20 @@ function App() {
               isPlaying={sequencer.isPlaying}
               bpm={sequencer.bpm}
               waveform={waveform}
+              pitchOffset={pitchOffset}
               onPlay={handleSeqPlay}
               onStop={sequencer.stop}
               onClear={sequencer.clear}
               onBpmChange={sequencer.setBpm}
               onNextWaveform={nextWaveform}
               onPrevWaveform={prevWaveform}
+              onPitchUp={() => setPitchOffset((p) => Math.min(MAX_PITCH_OFFSET, p + 1))}
+              onPitchDown={() => setPitchOffset((p) => Math.max(MIN_PITCH_OFFSET, p - 1))}
             />
             <SequencerGrid
               grid={sequencer.grid}
               currentStep={sequencer.currentStep}
+              pitchOffset={pitchOffset}
               onToggleCell={sequencer.toggleCell}
             />
           </>
