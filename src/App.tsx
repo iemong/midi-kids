@@ -292,7 +292,7 @@ function App() {
                 ▲
               </Button>
               <Badge variant="secondary" className="text-sm px-3 py-1">
-                {WAVEFORM_LABELS[waveform] ?? waveform}
+                {WAVEFORM_LABELS[waveform]}
               </Badge>
               <Button size="sm" variant="outline" onClick={nextWaveform}>
                 ▼
