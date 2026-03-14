@@ -19,7 +19,7 @@ export function LaunchpadGrid({ activePads, onPadOn, onPadOff }: LaunchpadGridPr
       (e.target as HTMLElement).setPointerCapture(e.pointerId);
       onPadOn(note);
     },
-    [onPadOn]
+    [onPadOn],
   );
 
   const handlePointerUp = useCallback(
@@ -27,7 +27,7 @@ export function LaunchpadGrid({ activePads, onPadOn, onPadOff }: LaunchpadGridPr
       e.preventDefault();
       onPadOff(note);
     },
-    [onPadOff]
+    [onPadOff],
   );
 
   const pads: React.ReactNode[] = [];
@@ -49,11 +49,9 @@ export function LaunchpadGrid({ activePads, onPadOn, onPadOff }: LaunchpadGridPr
           style={{
             backgroundColor: isActive ? pad.color : "hsl(var(--secondary))",
             transform: isActive ? "scale(0.92)" : "scale(1)",
-            boxShadow: isActive
-              ? `0 0 16px ${pad.color}80, 0 0 4px ${pad.color}40`
-              : "none",
+            boxShadow: isActive ? `0 0 16px ${pad.color}80, 0 0 4px ${pad.color}40` : "none",
           }}
-        />
+        />,
       );
     }
   }

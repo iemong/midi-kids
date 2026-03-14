@@ -42,9 +42,16 @@ export function randomColor(): number {
 
 /** CSS colors matching the Launchpad LED colors for on-screen display */
 const PAD_CSS_COLORS = [
-  "#ff3333", "#ff8833", "#ffff33", "#33ff33",
-  "#33ffff", "#3388ff", "#8833ff", "#ff33ff",
-  "#ff6666", "#66ff99",
+  "#ff3333",
+  "#ff8833",
+  "#ffff33",
+  "#33ff33",
+  "#33ffff",
+  "#3388ff",
+  "#8833ff",
+  "#ff33ff",
+  "#ff6666",
+  "#66ff99",
 ];
 
 export function randomCssColor(): string {
@@ -70,8 +77,14 @@ export function getSequencerRowLabels(pitchOffset: number): string[] {
 
 /** Colors for each sequencer row */
 export const SEQUENCER_ROW_COLORS = [
-  "#ff3333", "#ff8833", "#ffff33", "#33ff33",
-  "#33ffff", "#3388ff", "#8833ff", "#ff33ff",
+  "#ff3333",
+  "#ff8833",
+  "#ffff33",
+  "#33ff33",
+  "#33ffff",
+  "#3388ff",
+  "#8833ff",
+  "#ff33ff",
 ];
 
 /** Launchpad LED velocities for sequencer rows (one per row, bright colors) */

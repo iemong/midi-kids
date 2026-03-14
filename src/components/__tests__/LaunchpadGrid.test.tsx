@@ -3,13 +3,7 @@ import { LaunchpadGrid } from "@/components/LaunchpadGrid";
 
 describe("LaunchpadGrid", () => {
   it("renders 64 pad buttons", () => {
-    render(
-      <LaunchpadGrid
-        activePads={new Map()}
-        onPadOn={vi.fn()}
-        onPadOff={vi.fn()}
-      />
-    );
+    render(<LaunchpadGrid activePads={new Map()} onPadOn={vi.fn()} onPadOff={vi.fn()} />);
 
     const buttons = screen.getAllByRole("button");
     expect(buttons).toHaveLength(64);
@@ -19,11 +13,7 @@ describe("LaunchpadGrid", () => {
     const activePads = new Map([[44, { color: "#ff0000" }]]);
 
     const { container } = render(
-      <LaunchpadGrid
-        activePads={activePads}
-        onPadOn={vi.fn()}
-        onPadOff={vi.fn()}
-      />
+      <LaunchpadGrid activePads={activePads} onPadOn={vi.fn()} onPadOff={vi.fn()} />,
     );
 
     const activeButton = container.querySelector('[data-note="44"]') as HTMLElement;
@@ -36,11 +26,7 @@ describe("LaunchpadGrid", () => {
     const onPadOn = vi.fn();
 
     const { container } = render(
-      <LaunchpadGrid
-        activePads={new Map()}
-        onPadOn={onPadOn}
-        onPadOff={vi.fn()}
-      />
+      <LaunchpadGrid activePads={new Map()} onPadOn={onPadOn} onPadOff={vi.fn()} />,
     );
 
     const button = container.querySelector('[data-note="81"]') as HTMLElement;
@@ -52,11 +38,7 @@ describe("LaunchpadGrid", () => {
     const onPadOff = vi.fn();
 
     const { container } = render(
-      <LaunchpadGrid
-        activePads={new Map()}
-        onPadOn={vi.fn()}
-        onPadOff={onPadOff}
-      />
+      <LaunchpadGrid activePads={new Map()} onPadOn={vi.fn()} onPadOff={onPadOff} />,
     );
 
     const button = container.querySelector('[data-note="81"]') as HTMLElement;
@@ -68,11 +50,7 @@ describe("LaunchpadGrid", () => {
     const onPadOff = vi.fn();
 
     const { container } = render(
-      <LaunchpadGrid
-        activePads={new Map()}
-        onPadOn={vi.fn()}
-        onPadOff={onPadOff}
-      />
+      <LaunchpadGrid activePads={new Map()} onPadOn={vi.fn()} onPadOff={onPadOff} />,
     );
 
     const button = container.querySelector('[data-note="81"]') as HTMLElement;
@@ -81,13 +59,7 @@ describe("LaunchpadGrid", () => {
   });
 
   it("renders inactive pads with default scale", () => {
-    render(
-      <LaunchpadGrid
-        activePads={new Map()}
-        onPadOn={vi.fn()}
-        onPadOff={vi.fn()}
-      />
-    );
+    render(<LaunchpadGrid activePads={new Map()} onPadOn={vi.fn()} onPadOff={vi.fn()} />);
 
     const buttons = screen.getAllByRole("button");
     expect(buttons[0].style.transform).toBe("scale(1)");

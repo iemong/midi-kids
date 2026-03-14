@@ -47,7 +47,7 @@ export function useAudio() {
 
       activeRef.current.set(note, { oscillator, gain });
     },
-    [getContext]
+    [getContext],
   );
 
   const stopNote = useCallback(
@@ -63,7 +63,7 @@ export function useAudio() {
       entry.oscillator.stop(ctx.currentTime + 0.15);
       activeRef.current.delete(note);
     },
-    [getContext]
+    [getContext],
   );
 
   const resumeContext = useCallback(() => {

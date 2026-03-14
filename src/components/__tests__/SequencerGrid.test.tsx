@@ -9,12 +9,7 @@ function createGrid(rows = 8, steps = 8, fill = false): boolean[][] {
 describe("SequencerGrid", () => {
   it("renders 8x8 grid of buttons", () => {
     render(
-      <SequencerGrid
-        grid={createGrid()}
-        currentStep={-1}
-        pitchOffset={0}
-        onToggleCell={vi.fn()}
-      />
+      <SequencerGrid grid={createGrid()} currentStep={-1} pitchOffset={0} onToggleCell={vi.fn()} />,
     );
 
     const buttons = screen.getAllByRole("button");
@@ -23,12 +18,7 @@ describe("SequencerGrid", () => {
 
   it("displays row labels based on pitch offset", () => {
     render(
-      <SequencerGrid
-        grid={createGrid()}
-        currentStep={-1}
-        pitchOffset={0}
-        onToggleCell={vi.fn()}
-      />
+      <SequencerGrid grid={createGrid()} currentStep={-1} pitchOffset={0} onToggleCell={vi.fn()} />,
     );
 
     expect(screen.getByText("C3")).toBeInTheDocument();
@@ -37,23 +27,13 @@ describe("SequencerGrid", () => {
 
   it("updates labels when pitch offset changes", () => {
     const { rerender } = render(
-      <SequencerGrid
-        grid={createGrid()}
-        currentStep={-1}
-        pitchOffset={0}
-        onToggleCell={vi.fn()}
-      />
+      <SequencerGrid grid={createGrid()} currentStep={-1} pitchOffset={0} onToggleCell={vi.fn()} />,
     );
 
     expect(screen.getByText("C3")).toBeInTheDocument();
 
     rerender(
-      <SequencerGrid
-        grid={createGrid()}
-        currentStep={-1}
-        pitchOffset={4}
-        onToggleCell={vi.fn()}
-      />
+      <SequencerGrid grid={createGrid()} currentStep={-1} pitchOffset={4} onToggleCell={vi.fn()} />,
     );
 
     expect(screen.getByText("C4")).toBeInTheDocument();
@@ -69,7 +49,7 @@ describe("SequencerGrid", () => {
         currentStep={-1}
         pitchOffset={0}
         onToggleCell={onToggleCell}
-      />
+      />,
     );
 
     const buttons = screen.getAllByRole("button");
@@ -82,14 +62,7 @@ describe("SequencerGrid", () => {
     const grid = createGrid();
     grid[0][0] = true;
 
-    render(
-      <SequencerGrid
-        grid={grid}
-        currentStep={-1}
-        pitchOffset={0}
-        onToggleCell={vi.fn()}
-      />
-    );
+    render(<SequencerGrid grid={grid} currentStep={-1} pitchOffset={0} onToggleCell={vi.fn()} />);
 
     const buttons = screen.getAllByRole("button");
     // Row 0, step 0 is the last row visually (bottom), first column
@@ -101,14 +74,7 @@ describe("SequencerGrid", () => {
     const grid = createGrid();
     grid[7][3] = true; // Row 7 (top visually), step 3
 
-    render(
-      <SequencerGrid
-        grid={grid}
-        currentStep={3}
-        pitchOffset={0}
-        onToggleCell={vi.fn()}
-      />
-    );
+    render(<SequencerGrid grid={grid} currentStep={3} pitchOffset={0} onToggleCell={vi.fn()} />);
 
     const buttons = screen.getAllByRole("button");
     // Row 7 is first visually, step 3 = index 3
@@ -118,12 +84,7 @@ describe("SequencerGrid", () => {
 
   it("applies playhead ring to current step column", () => {
     render(
-      <SequencerGrid
-        grid={createGrid()}
-        currentStep={3}
-        pitchOffset={0}
-        onToggleCell={vi.fn()}
-      />
+      <SequencerGrid grid={createGrid()} currentStep={3} pitchOffset={0} onToggleCell={vi.fn()} />,
     );
 
     const buttons = screen.getAllByRole("button");

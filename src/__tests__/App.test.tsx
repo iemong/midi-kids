@@ -15,9 +15,7 @@ describe("App", () => {
 
   it("shows unsupported message when no MIDI API", () => {
     render(<App />);
-    expect(
-      screen.getByText(/このブラウザはWebMIDI APIに対応していません/)
-    ).toBeInTheDocument();
+    expect(screen.getByText(/このブラウザはWebMIDI APIに対応していません/)).toBeInTheDocument();
   });
 
   it("starts on launchpad view with 64+ buttons", () => {
@@ -120,9 +118,7 @@ describe("App", () => {
       await user.click(screen.getByRole("button", { name: "シーケンサー" }));
 
       const allButtons = screen.getAllByRole("button");
-      const gridButtons = allButtons.filter((b) =>
-        b.className.includes("aspect-square")
-      );
+      const gridButtons = allButtons.filter((b) => b.className.includes("aspect-square"));
       expect(gridButtons.length).toBe(64);
 
       await user.click(gridButtons[0]);
@@ -558,9 +554,7 @@ describe("App sequencer playback", () => {
 
     // Toggle a cell (row 7, step 0 - first button in grid)
     const allButtons = screen.getAllByRole("button");
-    const gridButtons = allButtons.filter((b) =>
-      b.className.includes("aspect-square")
-    );
+    const gridButtons = allButtons.filter((b) => b.className.includes("aspect-square"));
     fireEvent.click(gridButtons[0]); // row 7, step 0
 
     // Play
@@ -619,9 +613,7 @@ describe("App sequencer LED feedback", () => {
 
     // Toggle a cell at row 7, step 0
     const allButtons = screen.getAllByRole("button");
-    const gridButtons = allButtons.filter((b) =>
-      b.className.includes("aspect-square")
-    );
+    const gridButtons = allButtons.filter((b) => b.className.includes("aspect-square"));
     fireEvent.click(gridButtons[0]); // row 7, step 0
 
     // Play sequencer

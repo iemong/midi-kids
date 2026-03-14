@@ -3,7 +3,8 @@ import "@testing-library/jest-dom/vitest";
 // Mock setPointerCapture / releasePointerCapture (not available in jsdom)
 if (typeof HTMLElement !== "undefined") {
   HTMLElement.prototype.setPointerCapture = HTMLElement.prototype.setPointerCapture ?? (() => {});
-  HTMLElement.prototype.releasePointerCapture = HTMLElement.prototype.releasePointerCapture ?? (() => {});
+  HTMLElement.prototype.releasePointerCapture =
+    HTMLElement.prototype.releasePointerCapture ?? (() => {});
 }
 
 // Global AudioContext mock

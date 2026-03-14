@@ -1,12 +1,14 @@
 {
   "name": "midi-kids-temp",
-  "private": true,
   "version": "0.0.0",
+  "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint -c .oxlintrc.json src/",
+    "format": "oxfmt -c .oxfmtrc.json --write src/",
+    "format:check": "oxfmt -c .oxfmtrc.json --check src/",
     "typecheck": "tsc -b",
     "test": "vitest",
     "test:run": "vitest run",
@@ -46,6 +48,7 @@
     "jsdom": "^28.1.0",
     "knip": "^5.86.0",
     "lefthook": "^2.1.4",
+    "oxfmt": "^0.40.0",
     "oxlint": "^1.55.0",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.56.1",

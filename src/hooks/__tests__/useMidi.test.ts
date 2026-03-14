@@ -250,9 +250,7 @@ describe("useMidi", () => {
     });
 
     it("handles connection error", async () => {
-      vi.mocked(navigator.requestMIDIAccess).mockRejectedValueOnce(
-        new Error("denied")
-      );
+      vi.mocked(navigator.requestMIDIAccess).mockRejectedValueOnce(new Error("denied"));
 
       const { result } = renderHook(() => useMidi());
 

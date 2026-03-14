@@ -1,8 +1,5 @@
 import { Card } from "@/components/ui/card";
-import {
-  SEQUENCER_ROW_COLORS,
-  getSequencerRowLabels,
-} from "@/lib/midi-utils";
+import { SEQUENCER_ROW_COLORS, getSequencerRowLabels } from "@/lib/midi-utils";
 import { cn } from "@/lib/utils";
 
 interface SequencerGridProps {
@@ -38,7 +35,7 @@ export function SequencerGrid({
           onClick={() => onToggleCell(row, step)}
           className={cn(
             "aspect-square rounded-md transition-all duration-75 cursor-pointer select-none border-0",
-            isPlayhead && "ring-2 ring-white/30"
+            isPlayhead && "ring-2 ring-white/30",
           )}
           style={{
             backgroundColor: active
@@ -47,12 +44,9 @@ export function SequencerGrid({
                 ? "hsl(var(--secondary) / 0.8)"
                 : "hsl(var(--secondary))",
             transform: active && isPlayhead ? "scale(0.9)" : "scale(1)",
-            boxShadow:
-              active && isPlayhead
-                ? `0 0 12px ${color}80, 0 0 4px ${color}40`
-                : "none",
+            boxShadow: active && isPlayhead ? `0 0 12px ${color}80, 0 0 4px ${color}40` : "none",
           }}
-        />
+        />,
       );
     }
 
@@ -61,10 +55,8 @@ export function SequencerGrid({
         <span className="text-[10px] text-muted-foreground w-6 text-right shrink-0 font-mono">
           {label}
         </span>
-        <div className="grid grid-cols-8 gap-0.5 sm:gap-1 flex-1">
-          {cells}
-        </div>
-      </div>
+        <div className="grid grid-cols-8 gap-0.5 sm:gap-1 flex-1">{cells}</div>
+      </div>,
     );
   }
 

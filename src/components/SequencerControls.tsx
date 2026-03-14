@@ -37,12 +37,7 @@ export function SequencerControls({
         <Button size="sm" onClick={onPlay} disabled={isPlaying}>
           ▶
         </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={onStop}
-          disabled={!isPlaying}
-        >
+        <Button size="sm" variant="outline" onClick={onStop} disabled={!isPlaying}>
           ■
         </Button>
         <Button size="sm" variant="outline" onClick={onClear}>

@@ -29,20 +29,10 @@ const MAX_PITCH_OFFSET = 8;
 function App() {
   const [view, setView] = useState<View>("launchpad");
   const [pitchOffset, setPitchOffset] = useState(0);
-  const [activePads, setActivePads] = useState<Map<number, PadState>>(
-    new Map()
-  );
-  const {
-    playNote,
-    stopNote,
-    resumeContext,
-    waveform,
-    nextWaveform,
-    prevWaveform,
-  } = useAudio();
+  const [activePads, setActivePads] = useState<Map<number, PadState>>(new Map());
+  const { playNote, stopNote, resumeContext, waveform, nextWaveform, prevWaveform } = useAudio();
 
-  const { playStepNote, resumeContext: resumeSeqContext } =
-    useSequencerAudio();
+  const { playStepNote, resumeContext: resumeSeqContext } = useSequencerAudio();
 
   const handleStep = useCallback(
     (activeRows: number[]) => {
@@ -50,7 +40,7 @@ function App() {
         playStepNote(row, waveform, pitchOffsetRef.current);
       }
     },
-    [playStepNote, waveform]
+    [playStepNote, waveform],
   );
 
   const sequencer = useSequencer(handleStep);
@@ -72,7 +62,7 @@ function App() {
         return next;
       });
     },
-    [playNote]
+    [playNote],
   );
 
   const handleNoteOff = useCallback(
@@ -85,7 +75,7 @@ function App() {
         return next;
       });
     },
-    [stopNote]
+    [stopNote],
   );
 
   // --- Sequencer mode handlers ---
@@ -96,7 +86,7 @@ function App() {
       if (!pos) return;
       sequencer.toggleCell(pos.row, pos.col);
     },
-    [sequencer.toggleCell]
+    [sequencer.toggleCell],
   );
 
   // --- Unified MIDI handler ---
@@ -109,7 +99,7 @@ function App() {
         handleNoteOn(note);
       }
     },
-    [handleNoteOn, handleSeqNoteOn]
+    [handleNoteOn, handleSeqNoteOn],
   );
 
   const handleMidiNoteOff = useCallback(
@@ -119,7 +109,7 @@ function App() {
       }
       // Sequencer mode: no action on note off (toggle is on note on)
     },
-    [handleNoteOff]
+    [handleNoteOff],
   );
 
   const handleControlChange = useCallback(
@@ -135,7 +125,7 @@ function App() {
         else if (cc === 105) nextWaveform();
       }
     },
-    [nextWaveform, prevWaveform]
+    [nextWaveform, prevWaveform],
   );
 
   const { status, connect, sendLedOn, sendLedOff, sendLedOnWithColor, clearAllLeds } = useMidi({
@@ -200,7 +190,7 @@ function App() {
       resumeContext();
       handleNoteOn(note);
     },
-    [resumeContext, handleNoteOn]
+    [resumeContext, handleNoteOn],
   );
 
   const handleSeqPlay = useCallback(() => {
@@ -242,19 +232,13 @@ function App() {
       className="min-h-svh flex flex-col items-center justify-center p-4 gap-6"
       onPointerDown={resumeContext}
     >
-      <div
-        className="w-full max-w-lg space-y-4"
-      >
+      <div className="w-full max-w-lg space-y-4">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold tracking-tight">MIDI Kids</h1>
           <div className="flex items-center gap-2">
             <Badge variant={statusVariant}>{statusLabel[status]}</Badge>
             {status !== "unsupported" && status !== "connected" && (
-              <Button
-                size="sm"
-                onClick={handleConnect}
-                disabled={status === "connecting"}
-              >
+              <Button size="sm" onClick={handleConnect} disabled={status === "connecting"}>
                 MIDI接続
               </Button>
             )}
@@ -281,11 +265,7 @@ function App() {
 
         {view === "launchpad" && (
           <>
-            <LaunchpadGrid
-              activePads={activePads}
-              onPadOn={handlePadOn}
-              onPadOff={handleNoteOff}
-            />
+            <LaunchpadGrid activePads={activePads} onPadOn={handlePadOn} onPadOff={handleNoteOff} />
 
             <div className="flex items-center justify-center gap-3">
               <Button size="sm" variant="outline" onClick={prevWaveform}>
