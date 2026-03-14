@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { LaunchpadGrid } from "@/components/LaunchpadGrid";
@@ -8,7 +8,14 @@ import { useMidi } from "@/hooks/useMidi";
 import { useAudio } from "@/hooks/useAudio";
 import { useSequencer } from "@/hooks/useSequencer";
 import { useSequencerAudio } from "@/hooks/useSequencerAudio";
-import { randomCssColor, WAVEFORM_LABELS } from "@/lib/midi-utils";
+import {
+  randomCssColor,
+  WAVEFORM_LABELS,
+  noteToGrid,
+  gridToNote,
+  SEQUENCER_ROW_LED_COLORS,
+  SEQUENCER_PLAYHEAD_LED_COLOR,
+} from "@/lib/midi-utils";
 
 interface PadState {
   color: string;
@@ -18,6 +25,7 @@ type View = "launchpad" | "sequencer";
 
 function App() {
   const [view, setView] = useState<View>("launchpad");
+  const [seqPage, setSeqPage] = useState(0); // 0 = steps 0-7, 1 = steps 8-15
   const [activePads, setActivePads] = useState<Map<number, PadState>>(
     new Map()
   );
@@ -30,7 +38,6 @@ function App() {
     prevWaveform,
   } = useAudio();
 
-  // Sequencer audio & state
   const { playStepNote, resumeContext: resumeSeqContext } =
     useSequencerAudio();
 
@@ -44,6 +51,13 @@ function App() {
   );
 
   const sequencer = useSequencer(handleStep);
+
+  const viewRef = useRef(view);
+  const seqPageRef = useRef(seqPage);
+  viewRef.current = view;
+  seqPageRef.current = seqPage;
+
+  // --- Launchpad mode handlers ---
 
   const handleNoteOn = useCallback(
     (note: number) => {
@@ -71,24 +85,111 @@ function App() {
     [stopNote]
   );
 
+  // --- Sequencer mode handlers ---
+
+  const handleSeqNoteOn = useCallback(
+    (note: number) => {
+      const pos = noteToGrid(note);
+      if (!pos) return;
+      const step = pos.col + seqPageRef.current * 8;
+      sequencer.toggleCell(pos.row, step);
+    },
+    [sequencer.toggleCell]
+  );
+
+  // --- Unified MIDI handler ---
+
+  const handleMidiNoteOn = useCallback(
+    (note: number) => {
+      if (viewRef.current === "sequencer") {
+        handleSeqNoteOn(note);
+      } else {
+        handleNoteOn(note);
+      }
+    },
+    [handleNoteOn, handleSeqNoteOn]
+  );
+
+  const handleMidiNoteOff = useCallback(
+    (note: number) => {
+      if (viewRef.current === "launchpad") {
+        handleNoteOff(note);
+      }
+      // Sequencer mode: no action on note off (toggle is on note on)
+    },
+    [handleNoteOff]
+  );
+
   const handleControlChange = useCallback(
     (cc: number, value: number) => {
       if (value === 0) return;
-      if (cc === 104) prevWaveform();
-      else if (cc === 105) nextWaveform();
+      if (viewRef.current === "sequencer") {
+        // CC 104/105: page switch for sequencer
+        if (cc === 104) setSeqPage(0);
+        else if (cc === 105) setSeqPage(1);
+        // CC 106/107: waveform
+        else if (cc === 106) prevWaveform();
+        else if (cc === 107) nextWaveform();
+      } else {
+        if (cc === 104) prevWaveform();
+        else if (cc === 105) nextWaveform();
+      }
     },
     [nextWaveform, prevWaveform]
   );
 
-  const { status, connect, sendLedOn, sendLedOff } = useMidi({
-    onNoteOn: handleNoteOn,
-    onNoteOff: handleNoteOff,
+  const { status, connect, sendLedOn, sendLedOff, sendLedOnWithColor, clearAllLeds } = useMidi({
+    onNoteOn: handleMidiNoteOn,
+    onNoteOff: handleMidiNoteOff,
     onControlChange: handleControlChange,
   });
 
-  // Store refs to avoid circular dependency
-  const sendLedOnRef = { current: sendLedOn };
-  const sendLedOffRef = { current: sendLedOff };
+  const sendLedOnRef = useRef(sendLedOn);
+  const sendLedOffRef = useRef(sendLedOff);
+  sendLedOnRef.current = sendLedOn;
+  sendLedOffRef.current = sendLedOff;
+
+  // --- LED feedback for sequencer ---
+
+  const updateSequencerLeds = useCallback(() => {
+    if (status !== "connected") return;
+
+    for (let row = 0; row < 8; row++) {
+      for (let col = 0; col < 8; col++) {
+        const step = col + seqPage * 8;
+        const note = gridToNote(row, col);
+        const isActive = sequencer.grid[row]?.[step];
+        const isPlayhead = step === sequencer.currentStep;
+
+        if (isActive && isPlayhead) {
+          // Active + playhead: bright white
+          sendLedOnWithColor(note, 63);
+        } else if (isActive) {
+          // Active: row color
+          sendLedOnWithColor(note, SEQUENCER_ROW_LED_COLORS[row]);
+        } else if (isPlayhead) {
+          // Playhead only: dim
+          sendLedOnWithColor(note, SEQUENCER_PLAYHEAD_LED_COLOR);
+        } else {
+          sendLedOff(note);
+        }
+      }
+    }
+  }, [status, seqPage, sequencer.grid, sequencer.currentStep, sendLedOnWithColor, sendLedOff]);
+
+  // Update LEDs when in sequencer view
+  useEffect(() => {
+    if (view === "sequencer") {
+      updateSequencerLeds();
+    }
+  }, [view, updateSequencerLeds]);
+
+  // Clear LEDs when switching views
+  useEffect(() => {
+    if (status === "connected") {
+      clearAllLeds();
+    }
+  }, [view, status, clearAllLeds]);
 
   const handleConnect = useCallback(() => {
     resumeContext();
@@ -219,6 +320,27 @@ function App() {
               currentStep={sequencer.currentStep}
               onToggleCell={sequencer.toggleCell}
             />
+            {status === "connected" && (
+              <div className="flex items-center justify-center gap-2">
+                <Badge variant="secondary" className="text-xs">
+                  Launchpad ページ
+                </Badge>
+                <Button
+                  size="xs"
+                  variant={seqPage === 0 ? "default" : "outline"}
+                  onClick={() => setSeqPage(0)}
+                >
+                  1-8
+                </Button>
+                <Button
+                  size="xs"
+                  variant={seqPage === 1 ? "default" : "outline"}
+                  onClick={() => setSeqPage(1)}
+                >
+                  9-16
+                </Button>
+              </div>
+            )}
           </>
         )}
 

@@ -65,3 +65,9 @@ export const SEQUENCER_ROW_COLORS = [
   "#ff3333", "#ff8833", "#ffff33", "#33ff33",
   "#33ffff", "#3388ff", "#8833ff", "#ff33ff",
 ];
+
+/** Launchpad LED velocities for sequencer rows (one per row, bright colors) */
+export const SEQUENCER_ROW_LED_COLORS = [5, 9, 13, 21, 29, 37, 45, 53] as const;
+
+/** Playhead LED velocity (white/bright) */
+export const SEQUENCER_PLAYHEAD_LED_COLOR = 3;

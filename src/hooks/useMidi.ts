@@ -101,5 +101,23 @@ export function useMidi({ onNoteOn, onNoteOff, onControlChange }: UseMidiOptions
     output.send([0x80, note, 0]);
   }, []);
 
-  return { status, connect, sendLedOn, sendLedOff };
+  const sendLedOnWithColor = useCallback((note: number, velocity: number) => {
+    const output = outputRef.current;
+    if (!output) return;
+    output.send([0x90, note, velocity]);
+  }, []);
+
+  const clearAllLeds = useCallback(() => {
+    const output = outputRef.current;
+    if (!output) return;
+    // Send Note Off for all 64 pads (8x8 grid)
+    for (let row = 0; row < 8; row++) {
+      for (let col = 0; col < 8; col++) {
+        const note = (row + 1) * 10 + (col + 1);
+        output.send([0x80, note, 0]);
+      }
+    }
+  }, []);
+
+  return { status, connect, sendLedOn, sendLedOff, sendLedOnWithColor, clearAllLeds };
 }
