@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { LaunchpadGrid } from "@/components/LaunchpadGrid";
+import { VjDisplay } from "@/components/VjDisplay";
 import { SequencerGrid } from "@/components/SequencerGrid";
 import { SequencerControls } from "@/components/SequencerControls";
 import { useMidi } from "@/hooks/useMidi";
@@ -9,7 +10,7 @@ import { useAudio } from "@/hooks/useAudio";
 import { useSequencer } from "@/hooks/useSequencer";
 import { useSequencerAudio } from "@/hooks/useSequencerAudio";
 import {
-  randomCssColor,
+  randomPadColor,
   WAVEFORM_LABELS,
   noteToGrid,
   gridToNote,
@@ -30,6 +31,8 @@ function App() {
   const [view, setView] = useState<View>("launchpad");
   const [pitchOffset, setPitchOffset] = useState(0);
   const [activePads, setActivePads] = useState<Map<number, PadState>>(new Map());
+  const [forceTouchMode, setForceTouchMode] = useState(false);
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
   const { playNote, stopNote, resumeContext, waveform, nextWaveform, prevWaveform } = useAudio();
 
   const { playStepNote, resumeContext: resumeSeqContext } = useSequencerAudio();
@@ -55,10 +58,13 @@ function App() {
   const handleNoteOn = useCallback(
     (note: number) => {
       playNote(note);
-      sendLedOnRef.current(note);
+      // Hardware LED and on-screen burst share the same color so the pad the
+      // kid pressed is visibly the source of what lights up on screen.
+      const { velocity, css } = randomPadColor();
+      sendLedOnWithColorRef.current(note, velocity);
       setActivePads((prev) => {
         const next = new Map(prev);
-        next.set(note, { color: randomCssColor() });
+        next.set(note, { color: css });
         return next;
       });
     },
@@ -128,15 +134,15 @@ function App() {
     [nextWaveform, prevWaveform],
   );
 
-  const { status, connect, sendLedOn, sendLedOff, sendLedOnWithColor, clearAllLeds } = useMidi({
+  const { status, connect, sendLedOff, sendLedOnWithColor, clearAllLeds } = useMidi({
     onNoteOn: handleMidiNoteOn,
     onNoteOff: handleMidiNoteOff,
     onControlChange: handleControlChange,
   });
 
-  const sendLedOnRef = useRef(sendLedOn);
+  const sendLedOnWithColorRef = useRef(sendLedOnWithColor);
   const sendLedOffRef = useRef(sendLedOff);
-  sendLedOnRef.current = sendLedOn;
+  sendLedOnWithColorRef.current = sendLedOnWithColor;
   sendLedOffRef.current = sendLedOff;
 
   // --- LED feedback for sequencer ---
@@ -189,7 +195,33 @@ function App() {
   const handleConnect = useCallback(() => {
     resumeContext();
     connect();
+    // Best-effort: propped-up device stays awake and hides browser chrome
+    // while in VJ display. Both require a user gesture, so they ride this click.
+    document.documentElement.requestFullscreen?.().catch(() => {});
+    navigator.wakeLock
+      ?.request("screen")
+      .then((lock) => {
+        wakeLockRef.current = lock;
+      })
+      .catch(() => {});
   }, [resumeContext, connect]);
+
+  // Reset the manual override once disconnected, so the next connection
+  // defaults back to the VJ display instead of staying stuck in touch mode.
+  useEffect(() => {
+    if (status !== "connected") {
+      setForceTouchMode(false);
+    }
+  }, [status]);
+
+  // Release the wake lock when unmounting.
+  useEffect(() => {
+    return () => {
+      wakeLockRef.current?.release().catch(() => {});
+    };
+  }, []);
+
+  const isVjActive = view === "launchpad" && status === "connected" && !forceTouchMode;
 
   const handlePadOn = useCallback(
     (note: number) => {
@@ -269,23 +301,42 @@ function App() {
           </Button>
         </div>
 
-        {view === "launchpad" && (
-          <>
-            <LaunchpadGrid activePads={activePads} onPadOn={handlePadOn} onPadOff={handleNoteOff} />
+        {view === "launchpad" &&
+          (isVjActive ? (
+            <VjDisplay
+              activePads={activePads}
+              waveform={waveform}
+              onExit={() => setForceTouchMode(true)}
+            />
+          ) : (
+            <>
+              <LaunchpadGrid
+                activePads={activePads}
+                onPadOn={handlePadOn}
+                onPadOff={handleNoteOff}
+              />
 
-            <div className="flex items-center justify-center gap-3">
-              <Button size="sm" variant="outline" onClick={prevWaveform}>
-                ▲
-              </Button>
-              <Badge variant="secondary" className="text-sm px-3 py-1">
-                {WAVEFORM_LABELS[waveform]}
-              </Badge>
-              <Button size="sm" variant="outline" onClick={nextWaveform}>
-                ▼
-              </Button>
-            </div>
-          </>
-        )}
+              <div className="flex items-center justify-center gap-3">
+                <Button size="sm" variant="outline" onClick={prevWaveform}>
+                  ▲
+                </Button>
+                <Badge variant="secondary" className="text-sm px-3 py-1">
+                  {WAVEFORM_LABELS[waveform]}
+                </Badge>
+                <Button size="sm" variant="outline" onClick={nextWaveform}>
+                  ▼
+                </Button>
+              </div>
+
+              {status === "connected" && (
+                <div className="flex justify-center">
+                  <Button size="sm" variant="outline" onClick={() => setForceTouchMode(false)}>
+                    VJ表示に切り替え
+                  </Button>
+                </div>
+              )}
+            </>
+          ))}
 
         {view === "sequencer" && (
           <>
