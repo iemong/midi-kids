@@ -141,7 +141,7 @@ function App() {
 
   // --- LED feedback for sequencer ---
 
-  const updateSequencerLeds = useCallback(() => {
+  const paintSequencerLeds = useCallback(() => {
     if (status !== "connected") return;
 
     for (let row = 0; row < 8; row++) {
@@ -166,19 +166,25 @@ function App() {
     }
   }, [status, sequencer.grid, sequencer.currentStep, sendLedOnWithColor, sendLedOff]);
 
-  // Update LEDs when in sequencer view
+  // Clear and (if entering sequencer view) repaint LEDs together, so a view/status
+  // switch can never have its paint wiped by a separately-ordered clear effect.
   useEffect(() => {
+    if (status !== "connected") return;
+    clearAllLeds();
     if (view === "sequencer") {
-      updateSequencerLeds();
+      paintSequencerLeds();
     }
-  }, [view, updateSequencerLeds]);
-
-  // Clear LEDs when switching views
-  useEffect(() => {
-    if (status === "connected") {
-      clearAllLeds();
-    }
+    // Only react to view/status transitions here; ongoing grid/step repaints
+    // while already in sequencer view are handled by the effect below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view, status, clearAllLeds]);
+
+  // Keep sequencer LEDs in sync while playing/editing in sequencer view
+  useEffect(() => {
+    if (view === "sequencer" && status === "connected") {
+      paintSequencerLeds();
+    }
+  }, [view, status, paintSequencerLeds]);
 
   const handleConnect = useCallback(() => {
     resumeContext();

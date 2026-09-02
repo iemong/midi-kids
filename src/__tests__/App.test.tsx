@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import App from "@/App";
+import { SEQUENCER_ROW_LED_COLORS } from "@/lib/midi-utils";
 
 describe("App", () => {
   it("renders the app title", () => {
@@ -518,6 +519,27 @@ describe("App with MIDI", () => {
 
     // LEDs should have been updated
     expect(mockSend).toHaveBeenCalled();
+  });
+
+  it("keeps a painted sequencer LED lit after leaving and returning to the view", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: "MIDI接続" }));
+    await user.click(screen.getByRole("button", { name: "シーケンサー" }));
+
+    const allButtons = screen.getAllByRole("button");
+    const gridButtons = allButtons.filter((b) => b.className.includes("aspect-square"));
+    await user.click(gridButtons[0]); // row 7, step 0 -> note 81
+
+    // Leave and come back to sequencer view: the paint effect must run after
+    // (not before) the clear, otherwise the clear silently wipes the paint.
+    await user.click(screen.getByRole("button", { name: "ランチパッド" }));
+    mockSend.mockClear();
+    await user.click(screen.getByRole("button", { name: "シーケンサー" }));
+
+    const calls = mockSend.mock.calls.filter((args) => args[0][1] === 81);
+    expect(calls[calls.length - 1][0]).toEqual([0x90, 81, SEQUENCER_ROW_LED_COLORS[7]]);
   });
 
   it("handles MIDI note on for invalid note in sequencer mode", async () => {
