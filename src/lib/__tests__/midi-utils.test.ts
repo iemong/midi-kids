@@ -7,6 +7,7 @@ import {
   BRIGHT_COLORS,
   randomColor,
   randomCssColor,
+  randomPadColor,
   SEQUENCER_NUM_STEPS,
   SEQUENCER_DEFAULT_BPM,
   getSequencerRowLabels,
@@ -126,6 +127,28 @@ describe("randomCssColor", () => {
     for (let i = 0; i < 20; i++) {
       const c = randomCssColor();
       expect(c).toMatch(/^#[0-9a-f]{6}$/);
+    }
+  });
+});
+
+describe("randomPadColor", () => {
+  it("returns a velocity from BRIGHT_COLORS paired with a hex color", () => {
+    for (let i = 0; i < 20; i++) {
+      const { velocity, css } = randomPadColor();
+      expect(BRIGHT_COLORS).toContain(velocity);
+      expect(css).toMatch(/^#[0-9a-f]{6}$/);
+    }
+  });
+
+  it("keeps the velocity and css color at the same palette index", () => {
+    const original = Math.random;
+    try {
+      Math.random = () => 0.35; // index 3 of 10
+      const { velocity, css } = randomPadColor();
+      expect(velocity).toBe(BRIGHT_COLORS[3]);
+      expect(css).toBe("#33ff33");
+    } finally {
+      Math.random = original;
     }
   });
 });

@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import App from "@/App";
+import { SEQUENCER_ROW_LED_COLORS } from "@/lib/midi-utils";
 
 describe("App", () => {
   it("renders the app title", () => {
@@ -275,55 +276,88 @@ describe("App with MIDI", () => {
     expect(screen.getByText("接続済み")).toBeInTheDocument();
   });
 
-  it("sends LED on pad press in launchpad mode", async () => {
+  it("shows the VJ display instead of the touch grid when connected in launchpad view", async () => {
     const user = userEvent.setup();
-    const { container } = render(<App />);
+    render(<App />);
 
     await user.click(screen.getByRole("button", { name: "MIDI接続" }));
 
-    const pad = container.querySelector('[data-note="44"]') as HTMLElement;
-    fireEvent.pointerDown(pad);
-    expect(mockSend).toHaveBeenCalledWith(expect.arrayContaining([0x90, 44]));
+    expect(screen.getAllByRole("button").length).toBeLessThan(20);
+    expect(screen.getByRole("button", { name: "タッチモードに戻す" })).toBeInTheDocument();
   });
 
-  it("sends LED off on pad release in launchpad mode", async () => {
+  it("toggles between VJ display and touch grid via the manual override", async () => {
     const user = userEvent.setup();
-    const { container } = render(<App />);
+    render(<App />);
 
     await user.click(screen.getByRole("button", { name: "MIDI接続" }));
-    mockSend.mockClear();
+    await user.click(screen.getByRole("button", { name: "タッチモードに戻す" }));
 
-    const pad = container.querySelector('[data-note="44"]') as HTMLElement;
-    fireEvent.pointerDown(pad);
-    fireEvent.pointerUp(pad);
+    expect(screen.getAllByRole("button").length).toBeGreaterThan(64);
+    expect(screen.getByRole("button", { name: "VJ表示に切り替え" })).toBeInTheDocument();
 
-    expect(mockSend).toHaveBeenCalledWith([0x80, 44, 0]);
+    await user.click(screen.getByRole("button", { name: "VJ表示に切り替え" }));
+    expect(screen.getAllByRole("button").length).toBeLessThan(20);
   });
 
-  it("handles MIDI note on in launchpad mode", async () => {
+  it("sends LED on when the physical pad is pressed in launchpad mode", async () => {
     const user = userEvent.setup();
-    const { container } = render(<App />);
+    render(<App />);
 
     await user.click(screen.getByRole("button", { name: "MIDI接続" }));
 
-    // Simulate MIDI note on
     act(() => {
       mockInput.onmidimessage?.({
         data: new Uint8Array([0x90, 44, 100]),
       } as MIDIMessageEvent);
     });
 
-    const pad = container.querySelector('[data-note="44"]') as HTMLElement;
-    expect(pad.style.transform).toBe("scale(0.92)");
+    expect(mockSend).toHaveBeenCalledWith(expect.arrayContaining([0x90, 44]));
   });
 
-  it("handles MIDI note off in launchpad mode", async () => {
+  it("sends LED off when the physical pad is released in launchpad mode", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: "MIDI接続" }));
+
+    act(() => {
+      mockInput.onmidimessage?.({
+        data: new Uint8Array([0x90, 44, 100]),
+      } as MIDIMessageEvent);
+    });
+    mockSend.mockClear();
+
+    act(() => {
+      mockInput.onmidimessage?.({
+        data: new Uint8Array([0x80, 44, 0]),
+      } as MIDIMessageEvent);
+    });
+
+    expect(mockSend).toHaveBeenCalledWith([0x80, 44, 0]);
+  });
+
+  it("shows a VJ burst for the active pad on MIDI note on", async () => {
     const user = userEvent.setup();
     const { container } = render(<App />);
 
     await user.click(screen.getByRole("button", { name: "MIDI接続" }));
 
-    // Note on then off
+    act(() => {
+      mockInput.onmidimessage?.({
+        data: new Uint8Array([0x90, 44, 100]),
+      } as MIDIMessageEvent);
+    });
+
+    expect(container.querySelector('[data-note="44"][data-vj-burst="true"]')).toBeInTheDocument();
+  });
+
+  it("removes the VJ burst on MIDI note off", async () => {
+    const user = userEvent.setup();
+    const { container } = render(<App />);
+
+    await user.click(screen.getByRole("button", { name: "MIDI接続" }));
+
     act(() => {
       mockInput.onmidimessage?.({
         data: new Uint8Array([0x90, 44, 100]),
@@ -336,8 +370,9 @@ describe("App with MIDI", () => {
       } as MIDIMessageEvent);
     });
 
-    const pad = container.querySelector('[data-note="44"]') as HTMLElement;
-    expect(pad.style.transform).toBe("scale(1)");
+    expect(
+      container.querySelector('[data-note="44"][data-vj-burst="true"]'),
+    ).not.toBeInTheDocument();
   });
 
   it("ignores note off in sequencer mode", async () => {
@@ -518,6 +553,27 @@ describe("App with MIDI", () => {
 
     // LEDs should have been updated
     expect(mockSend).toHaveBeenCalled();
+  });
+
+  it("keeps a painted sequencer LED lit after leaving and returning to the view", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: "MIDI接続" }));
+    await user.click(screen.getByRole("button", { name: "シーケンサー" }));
+
+    const allButtons = screen.getAllByRole("button");
+    const gridButtons = allButtons.filter((b) => b.className.includes("aspect-square"));
+    await user.click(gridButtons[0]); // row 7, step 0 -> note 81
+
+    // Leave and come back to sequencer view: the paint effect must run after
+    // (not before) the clear, otherwise the clear silently wipes the paint.
+    await user.click(screen.getByRole("button", { name: "ランチパッド" }));
+    mockSend.mockClear();
+    await user.click(screen.getByRole("button", { name: "シーケンサー" }));
+
+    const calls = mockSend.mock.calls.filter((args) => args[0][1] === 81);
+    expect(calls[calls.length - 1][0]).toEqual([0x90, 81, SEQUENCER_ROW_LED_COLORS[7]]);
   });
 
   it("handles MIDI note on for invalid note in sequencer mode", async () => {

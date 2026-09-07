@@ -58,6 +58,12 @@ export function randomCssColor(): string {
   return PAD_CSS_COLORS[Math.floor(Math.random() * PAD_CSS_COLORS.length)];
 }
 
+/** Random LED velocity paired with the matching on-screen CSS color (same index in both palettes) */
+export function randomPadColor(): { velocity: number; css: string } {
+  const index = Math.floor(Math.random() * BRIGHT_COLORS.length);
+  return { velocity: BRIGHT_COLORS[index], css: PAD_CSS_COLORS[index] };
+}
+
 /** Step sequencer constants */
 export const SEQUENCER_NUM_STEPS = 8;
 export const SEQUENCER_DEFAULT_BPM = 120;
